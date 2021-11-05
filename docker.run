@@ -1,0 +1,7 @@
+# Create docker image from Dockerfile
+docker build -t airflow_1 .
+
+
+# Run docker container with bind local folder to docker folder
+# docker run -d -p 8080:8080 -v c:/Users/olega/airflow/dags/:/usr/local/airflow/dags airflow_1 webserver
+docker run -it -p 8080:8080 --mount type=bind,source=c:/Users/olega/airflow/dags/,target=/root/airflow/dags airflow_1
