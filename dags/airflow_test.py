@@ -14,29 +14,25 @@ from airflow.models import Variable
 first_dag = DAG(
     "first_dag",
     description='Python DAG example',
-    schedule_interval="* * * * *",
+    schedule_interval="5 * * * *",
     start_date=days_ago(0, 0, 0, 0, 0),
     tags=['python'],
     doc_md='*Python DAG doc* :)'
 )
 
 def get_engine():
-    engine = sa.create_engine('postgresql+psycopg2://postgres:123@host.docker.internal/postgres')
+    user = 'postgres'
+    password = '123'
+    host = 'host.docker.internal'
+    dbname = 'postgres'
+    engine = sa.create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{dbname}')
     return engine
 
 
-def save_emp():
-    query_emp = 'SELECT * FROM vr_startup.employees'
-    df_emp = pd.read_sql(query_emp, get_engine())
-    print(df_emp.head(2))
-    df_emp.to_csv('employees.csv', index=False)
-
-
-def save_project():
-    query_proj = 'SELECT * FROM vr_startup.projects'
-    df_proj = pd.read_sql(query_proj, get_engine())
-    print(df_proj.head(2))
-    df_proj.to_csv('project.csv', index=False)
+def save_db(query, file_name):
+    df_db = pd.read_sql(query, get_engine())
+    print(df_db.head(2))
+    df_db.to_csv(file_name, index=False)
 
 
 def merge_df():
@@ -54,18 +50,6 @@ def pivot_df():
     df_pivot.to_csv('pivot_person.csv')
 
 
-download_dataframe_employees = PythonOperator(
-    task_id='save_emp',
-    python_callable=save_emp,
-    dag=first_dag
-)
-
-download_dataframe_projects = PythonOperator(
-    task_id='save_project',
-    python_callable=save_project,
-    dag=first_dag
-)
-
 merge_dataframe = PythonOperator(
     task_id='merge_df',
     python_callable=merge_df,
@@ -79,11 +63,26 @@ pivot_dataframe = PythonOperator(
 )
 
 
+query_list = ['SELECT * FROM vr_startup.employees', 
+              'SELECT * FROM vr_startup.projects']
+name_list = ['employees.csv',
+             'project.csv']
+
+for query, file_name in zip(query_list, name_list):
+    download_dataframe = PythonOperator(
+    task_id='save_' + file_name[:-4],
+    python_callable=save_db,
+    op_kwargs={'query': query, 
+               'file_name': file_name},
+    dag=first_dag
+    )
+
+    download_dataframe >> merge_dataframe
+
+
 # change working directory to /
 # You should not use it in production
 
 os.chdir("/")
 
-download_dataframe_employees >> merge_dataframe
-download_dataframe_projects >> merge_dataframe
 merge_dataframe >> pivot_dataframe
