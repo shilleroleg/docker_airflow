@@ -21,7 +21,7 @@ first_dag = DAG(
 )
 
 def get_engine():
-    engine = sa.create_engine('postgresql+psycopg2://postgres:123@172.17.0.1/postgres')
+    engine = sa.create_engine('postgresql+psycopg2://postgres:123@host.docker.internal/postgres')
     return engine
 
 
