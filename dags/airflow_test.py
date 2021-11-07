@@ -1,4 +1,5 @@
-# Author:  dmitry-brazhenko / airflow_tutorial
+# Idea:  dmitry-brazhenko / airflow_tutorial
+# Change: shilleroleg@gmail.com
 import os
 
 import pandas as pd
@@ -14,7 +15,7 @@ from airflow.models import Variable
 first_dag = DAG(
     "first_dag",
     description='Python DAG example',
-    schedule_interval="5 * * * *",
+    schedule_interval="*/5 * * * *",    # every 5 minutes
     start_date=days_ago(0, 0, 0, 0, 0),
     tags=['python'],
     doc_md='*Python DAG doc* :)'
@@ -49,6 +50,10 @@ def pivot_df():
     print(df_pivot.head(2))
     df_pivot.to_csv('pivot_person.csv')
 
+# change working directory to /
+# You should not use it in production
+
+os.chdir("/")
 
 merge_dataframe = PythonOperator(
     task_id='merge_df',
@@ -62,6 +67,7 @@ pivot_dataframe = PythonOperator(
     dag=first_dag
 )
 
+merge_dataframe >> pivot_dataframe
 
 query_list = ['SELECT * FROM vr_startup.employees', 
               'SELECT * FROM vr_startup.projects']
@@ -80,9 +86,5 @@ for query, file_name in zip(query_list, name_list):
     download_dataframe >> merge_dataframe
 
 
-# change working directory to /
-# You should not use it in production
 
-os.chdir("/")
 
-merge_dataframe >> pivot_dataframe
