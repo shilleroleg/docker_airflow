@@ -16,6 +16,7 @@ first_dag = DAG(
     "first_dag",
     description='Python DAG example',
     schedule_interval="*/5 * * * *",    # every 5 minutes
+    # schedule_interval="* * * * *",    # every minutes
     start_date=days_ago(0, 0, 0, 0, 0),
     tags=['python'],
     doc_md='*Python DAG doc* :)'
@@ -37,18 +38,18 @@ def save_db(query, file_name):
 
 
 def merge_df():
-    df_emp = pd.read_csv('employees.csv')
-    df_proj = pd.read_csv('project.csv')
-    df_sum = df_emp.merge(df_proj, how='left', left_on='current_project', right_on='project_id')
+    df_prod = pd.read_csv('products.csv')
+    df_user = pd.read_csv('users.csv')
+    df_sum = df_user.merge(df_prod, how='left', left_on='id_products', right_on='id_products')
     print(df_sum.head(2))
     df_sum.to_csv('sum.csv', index=False)
 
 
 def pivot_df():
     df_sum=pd.read_csv('sum.csv')
-    df_pivot = df_sum.pivot_table(index='position', values=['start_date', 'end_date'], aggfunc=np.max)
+    df_pivot = df_sum.pivot_table(index='sex', values=['age', 'income'], aggfunc=np.mean)
     print(df_pivot.head(2))
-    df_pivot.to_csv('pivot_person.csv')
+    df_pivot.to_csv('pivot_users.csv')
 
 # change working directory to /
 # You should not use it in production
@@ -69,10 +70,10 @@ pivot_dataframe = PythonOperator(
 
 merge_dataframe >> pivot_dataframe
 
-query_list = ['SELECT * FROM vr_startup.employees', 
-              'SELECT * FROM vr_startup.projects']
-name_list = ['employees.csv',
-             'project.csv']
+query_list = ['SELECT * FROM airflow.products', 
+              'SELECT * FROM airflow.users']
+name_list = ['products.csv',
+             'users.csv']
 
 for query, file_name in zip(query_list, name_list):
     download_dataframe = PythonOperator(
