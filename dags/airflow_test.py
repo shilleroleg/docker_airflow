@@ -15,8 +15,8 @@ from airflow.models import Variable
 first_dag = DAG(
     "first_dag",
     description='Python DAG example',
-    schedule_interval="*/5 * * * *",    # every 5 minutes
-    # schedule_interval="* * * * *",    # every minutes
+    # schedule_interval="*/45 * * * *",    # every 45 minutes
+    schedule_interval="* * * * *",    # every minutes
     start_date=days_ago(0, 0, 0, 0, 0),
     tags=['python'],
     doc_md='*Python DAG doc* :)'
