@@ -12,15 +12,6 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 
-first_dag = DAG(
-    "first_dag",
-    description='Python DAG example',
-    # schedule_interval="*/45 * * * *",    # every 45 minutes
-    schedule_interval="* * * * *",    # every minutes
-    start_date=days_ago(0, 0, 0, 0, 0),
-    tags=['python'],
-    doc_md='*Python DAG doc* :)'
-)
 
 def get_engine():
     user = 'postgres'
@@ -56,36 +47,44 @@ def pivot_df():
 
 os.chdir("/")
 
-merge_dataframe = PythonOperator(
-    task_id='merge_df',
-    python_callable=merge_df,
-    dag=first_dag
-)
+with DAG(
+    "first_dag",
+    description='Python DAG example',
+    # schedule_interval="*/5 * * * *",    # every X minutes
+    schedule_interval="* * * * *",    # every minutes
+    start_date=days_ago(0, 0, 0, 0, 0),
+    tags=['python'],
+    doc_md='*Python DAG doc* :)',
+) as first_dag:
 
-pivot_dataframe = PythonOperator(
-    task_id='pivot_df',
-    python_callable=pivot_df,
-    dag=first_dag
-)
-
-merge_dataframe >> pivot_dataframe
-
-query_list = ['SELECT * FROM airflow.products', 
-              'SELECT * FROM airflow.users']
-name_list = ['products.csv',
-             'users.csv']
-
-for query, file_name in zip(query_list, name_list):
-    download_dataframe = PythonOperator(
-    task_id='save_' + file_name[:-4],
-    python_callable=save_db,
-    op_kwargs={'query': query, 
-               'file_name': file_name},
-    dag=first_dag
+    merge_dataframe = PythonOperator(
+        task_id='merge_df',
+        python_callable=merge_df,
+        dag=first_dag
     )
 
-    download_dataframe >> merge_dataframe
+    pivot_dataframe = PythonOperator(
+        task_id='pivot_df',
+        python_callable=pivot_df,
+        dag=first_dag
+    )
+        
+    query_list = ['SELECT * FROM airflow.products', 
+                  'SELECT * FROM airflow.users']
+    name_list = ['products.csv',
+                 'users.csv']
 
+    for query, file_name in zip(query_list, name_list):
+        download_dataframe = PythonOperator(
+        task_id='save_' + file_name[:-4],
+        python_callable=save_db,
+        op_kwargs={'query': query, 
+                   'file_name': file_name},
+        dag=first_dag
+        )
 
+        download_dataframe >> merge_dataframe
+
+    merge_dataframe >> pivot_dataframe
 
 
