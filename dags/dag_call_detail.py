@@ -32,8 +32,9 @@ def get_engine():
     password = connection.password
     host = connection.host
     port = connection.port
-    dbname = connection.login
+    dbname = connection.schema
     # dbname = CONN_ID                          # <--------
+
     return create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{dbname}')
     # return create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}')
 
@@ -119,21 +120,14 @@ with DAG(
     # Записываем в таблицу script_log время и статус начала обработки
     update_script_log_start = PostgresOperator(
         task_id="update_script_log_start",
-        postgres_conn_id=CONN_ID,                                           # <------
-        # sql="""
-        # insert into {{ params.schema_name }}.script_log (id_script, date_start, id_status_process, key_process)
-        # values ('{{ ti.xcom_pull(task_ids='get_last_date_run', key='id_script') }}',
-        #         (current_timestamp at time zone 'UTC-07'),
-        #         1,
-        #         '{{ ti.xcom_pull(task_ids='get_last_date_run', key='key_process') }}')
-        # """,
+        postgres_conn_id=CONN_ID,                                          # <------
         sql="""
-            insert into {{ params.schema_name }}.script_log (id_script, date_start, id_status_process, key_process)
-            values (111111, 
-                    (current_timestamp at time zone 'UTC-07'), 
-                    1,
-                    'kmlfjafdjjiejllkknnm')
-            """,
+        insert into {{ params.schema_name }}.script_log (id_script, date_start, id_status_process, key_process)
+        values ('{{ ti.xcom_pull(task_ids='get_last_date_run', key='id_script') }}',
+                (current_timestamp at time zone 'UTC-07'),
+                1,
+                '{{ ti.xcom_pull(task_ids='get_last_date_run', key='key_process') }}')
+        """,
         params=parameters,
     )
 
@@ -145,8 +139,7 @@ with DAG(
         params=parameters,
     )
 
-    # check_last_date_run >> \
-    get_last_date_run >> print_last_date_run >> update_script_log_start >> create_view
+    check_last_date_run >>  get_last_date_run >> print_last_date_run >> update_script_log_start >> create_view
 
     # check_last_date_run >> get_last_date_run >> update_script_log_start >> get_call_detail >> create_view >> calculate_params >> update_script_log_stop >> delete_temp_table
     #                                                   create_temp_table >> get_call_detail
