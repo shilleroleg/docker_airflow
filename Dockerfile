@@ -4,7 +4,7 @@ FROM ubuntu:latest
 
 RUN apt-get update -y
 RUN apt-get install -y python3-pip python3-dev zsh curl git locales
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen
