@@ -1,8 +1,12 @@
 select 
-	distinct date_trunc('day', tl.last_time) as last_time,
-	tl.id as id
+	distinct ti.day_count,
+	si.id
 FROM 
-	{{params.schema_name}}.table_log tl
--- 	pkap_247_sch.table_log tl
-WHERE 
-	date_trunc('day', tl.last_time) = CURRENT_DATE - 1
+	{{params.log_schema_name}}.tables_info ti
+	left join {{params.log_schema_name}}.scripts_and_tables sat 
+		on ti.id = sat.id_table
+	left join {{params.log_schema_name}}.scripts_info si 
+		on si.id = sat.id_script
+WHERE ti.table_name = '{{params.table_name}}'
+	and si.script_name = '{{params.script_name}}'
+	and ti.last_date_update > si.last_date_run
